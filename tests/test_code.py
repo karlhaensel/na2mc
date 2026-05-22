@@ -1,5 +1,7 @@
 """Tests for Mastermind code class."""
 
+from unittest.mock import patch, MagicMock
+
 import pytest
 
 from scripts.code import MasterMindCode
@@ -83,6 +85,28 @@ def test_from_guess(guess_code: str, should_raise: bool) -> None:
 
 
 @pytest.mark.parametrize(
+    "guess_code, should_raise", [("rgyb", False), ("xxxx", True), ("rgyx", True)]
+)
+@patch("re.search")
+def test_from_guess_but_somehow_a_wrong_colour_letter_sneaked_in(
+    mock_regex_search: MagicMock, guess_code: str, should_raise: bool
+) -> None:
+    """
+    Test the None check in MasterMindCode.from_guess.
+
+    (although this should not happen if MasterMindColour is consistent, but mypy...).
+    """
+    if should_raise:
+        mock_regex_search.return_value = True
+        with pytest.raises(ValueError, match="Invalid colour letter: x"):
+            MasterMindCode.from_guess(guess_code)
+    else:
+        code = MasterMindCode.from_guess(guess_code)
+        assert isinstance(code, MasterMindCode)
+        assert all([isinstance(colour, MasterMindColour) for colour in code.colours])
+
+
+@pytest.mark.parametrize(
     "first_code, second_code, is_equal",
     [
         ("rrrr", "gggg", False),
@@ -93,11 +117,22 @@ def test_from_guess(guess_code: str, should_raise: bool) -> None:
         ("royg", "gyor", False),
     ],
 )
-def test_equality(first_code: str, second_code: str, is_equal: bool) -> None:
-    """Test Mastermind code equality check."""
+def test_equality_with_valid_codes(
+    first_code: str, second_code: str, is_equal: bool
+) -> None:
+    """Test Mastermind code equality check for comparing two codes."""
     first = MasterMindCode.from_guess(first_code)
     second = MasterMindCode.from_guess(second_code)
     assert (first == second) == is_equal
+
+
+def test_equality_with_other_than_code() -> None:
+    """Test Mastermind code equality check with other not being a MasterMindCode."""
+    with pytest.raises(
+        ValueError,
+        match="You can only compare a MasterMindCode with another MasterMindCode!",
+    ):
+        MasterMindCode.from_guess("rrrr") == "rrrr"
 
 
 @pytest.mark.parametrize(

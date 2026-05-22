@@ -48,7 +48,7 @@ class MasterMindCode:
     def __eq__(self, other):
         """Determine, whether two MasterMindCodes are equal."""
         if not isinstance(other, MasterMindCode):
-            return ValueError(
+            raise ValueError(
                 "You can only compare a MasterMindCode with another MasterMindCode!"
             )
         return self.colours == other.colours
